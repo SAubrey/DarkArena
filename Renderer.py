@@ -30,7 +30,8 @@ class Renderer(object):
         self.old_rects = []  # To be replaced with background
         self.tail_skip_counter = 0
         self.tail_skip_thresh = 1
-        self.last_pos, self.new_pos = Vec2d(0, 0), Vec2d(0, 0)
+        self.new_player_pos = Vec2d((int(max(10, self.screen_dim.x / 3))), int(max(10, self.screen_dim.y / 3)))
+        self.last_player_pos = self.new_player_pos
 
         self.player_health = 100
         self.max_player_health = 100
@@ -45,6 +46,7 @@ class Renderer(object):
 
     def initialize(self):
         self.clock = pygame.time.Clock()
+        self.font = pygame.font.SysFont("Arial", 16)
         self.screen = pygame.display.set_mode(self.screen_dim)
         pygame.display.set_caption("Incessance")
         self.background = pygame.image.load(os.path.join("3dgrid.jpg")).convert()
@@ -63,8 +65,8 @@ class Renderer(object):
             self.render()
         elif event.name == EV_PLAYER_MOVE:
             p = (Vec2d(event.position))
-            self.last_pos = self.new_pos
-            self.new_pos = p
+            self.last_player_pos = self.new_player_pos
+            self.new_player_pos = p
         elif event.name == EV_PLAYER_STATS:
             self.player_health = event.health
             self.player_stamina = event.stamina
@@ -89,21 +91,24 @@ class Renderer(object):
 
         self.draw_sprites()
         self.draw_HUD()
+        self.screen.blit(self.background, (0, 50, 130, 30), (0, 50, 130, 30))
+        self.screen.blit(self.font.render("fps: " + str(self.clock.get_fps()), 1, WHITE), (0, 50))
         all_rects = self.dirty_rects + self.tail_rects + self.stat_rects.values() + self.blit_stat_rects.values()
         pygame.display.update(all_rects)
-        #print(len(self.tail_rects))
-        #self.space.debug_draw(self.draw_options)
+        pygame.display.update((0, 50, 130, 30))
         #pygame.display.flip()  # Update entire screen
+        self.space.debug_draw(self.draw_options)
 
     def draw_sprites(self):
-        self.dirty_rects = self.all_sprites.draw(self.screen) # Gets list of rects from sprites
+        self.dirty_rects = self.all_sprites.draw(self.screen)  # Gets list of rects from sprites
 
         # Clear and re-fill tail Rects (updates color)
         del self.tail_rects[:]
         for s in self.tail_sprites:
             s.update()
-            self.tail_rects.append(pygame.draw.rect(self.screen, s.get_color(), s.get_rect()))
-
+            pos = s.get_rect().x + s.get_radius(), s.get_rect().y + s.get_radius()
+            self.tail_rects.append(pygame.draw.circle(self.screen, s.get_color(), pos, s.get_radius(), 0))
+            #self.tail_rects.append(pygame.draw.rect(self.screen, s.get_color(), s.get_rect()))
         self.draw_player_tail()
 
         # Replace old tail pixels with background
@@ -114,7 +119,7 @@ class Renderer(object):
     def draw_player_tail(self):
         self.tail_skip_counter += 1
         if self.tail_skip_counter >= self.tail_skip_thresh:
-            self.draw_line_between(self.last_pos, self.new_pos, 10)
+            self.draw_line_between(self.last_player_pos, self.new_player_pos, 10)
             self.tail_skip_counter = 0
 
     def draw_line_between(self, p1, p2, width):
