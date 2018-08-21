@@ -40,6 +40,8 @@ class Controller(object):
                     ie = InputEvent("A", down_press)
                 elif event.key == pygame.K_d:
                     ie = InputEvent("D", down_press)
+                elif event.key == pygame.K_LSHIFT:
+                    ie = InputEvent("SHIFT", down_press, pygame.mouse.get_pos())
 
                 if ie is not None:
                     self.em.post(ie)
@@ -47,8 +49,10 @@ class Controller(object):
             elif event.type == pygame.MOUSEMOTION:
                 self.em.post(MouseMoveEvent(event.pos))
 
-            elif event.type == pygame.MOUSEBUTTONDOWN:
-                if event.button == 1:  # Left click
-                    pass
-                elif event.button == 3:  # Right click
-                    self.em.post(MouseClickEvent(event.pos, 3))
+            elif event.type == pygame.MOUSEBUTTONUP or event.type == pygame.MOUSEBUTTONDOWN:
+                if event.button == 1 or event.button == 3:
+                    if event.type == pygame.MOUSEBUTTONDOWN:
+                        down_press = True
+                    else:
+                        down_press = False
+                    self.em.post(MouseClickEvent(event.pos, event.button, down_press))

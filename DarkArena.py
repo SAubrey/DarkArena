@@ -14,13 +14,14 @@ def start():
     os.environ['SDL_VIDEO_WINDOW_POS'] = str(0) + "," + str(win_offset_y)
     pygame.init()
     info_obj = pygame.display.Info()
-    print(info_obj)
+    #print(info_obj)
     screen_dim = Vec2d(int(info_obj.current_w), int(info_obj.current_h - win_offset_y))
 
     em = EventManager.EventManager()
     game_engine = GameEngine.GameEngine(em, screen_dim)
     renderer = Renderer.Renderer(em, game_engine, screen_dim)
     controller = Controller.Controller(em, game_engine)
+
     game_engine.run()
 
 

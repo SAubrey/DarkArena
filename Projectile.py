@@ -1,20 +1,19 @@
-from Sprite import Sprite
+from Sprite import *
 import pymunk
 from pymunk.vec2d import Vec2d
 import pygame
 
-
-YELLOW = (200, 20, 200)
+YELLOW = (200, 200, 20)
+PURPLE = (200, 0, 200)
 
 
 class Projectile(Sprite):
-    def __init__(self, game_engine, color, radius, screen_dim, start_pos, dest_pos, life_time, move_force, attack_power):
-        super(Projectile, self).__init__(game_engine, color, radius, radius)
-        self.screen_dim = screen_dim
-        self.start_pos = Vec2d(start_pos)
-        self.dest_pos = Vec2d(dest_pos)
+    def __init__(self, shooter, color, radius, target_pos, life_time, move_force, attack_power):
+        super(Projectile, self).__init__(shooter.ge, color, Vec2d(radius * 2, radius * 2))
+        self.start_pos = calculate_pos_between_points(shooter.get_centered_pos(), target_pos, shooter.radius + 5)
+        self.target_pos = Vec2d(target_pos)
         self.radius = radius
-        self.mass = 0.02
+        self.mass = 0.01
         self.move_force = move_force
         self.attack_power = attack_power
 
@@ -28,37 +27,30 @@ class Projectile(Sprite):
 
         self.rect.x = self.start_pos.x
         self.rect.y = self.start_pos.y
-        self.ge.add_body(self.body, self.shape)
-        #self.ge.add_sprite(self)
 
         self.life_time = life_time  # ms
         self.birth_time = pygame.time.get_ticks()
 
-    def move(self):
-        start = self.start_pos
-        dest = self.dest_pos
+        self.fire()
 
-        dx = (dest.x - start.x)
-        dy = (dest.y - start.y)
-        if dx == 0: dx += 1
-        if dy == 0: dy += 1
-        slope = abs(dx / dy)
-        vec = Vec2d(self.move_force, self.move_force)
-        if dx < 0:
-            vec.x *= -1
-        if dy < 0:
-            vec.y *= -1
-        vec.x *= (slope/(slope + 1))
-        vec.y *= (1/(slope + 1))
-        self.body.apply_force_at_local_point(vec, (0, 0))
-
-    def check_dead(self):
+    def check_expired(self):
         elapsed_time = pygame.time.get_ticks() - self.birth_time
         if elapsed_time > self.life_time:
-            self.ge.remove_projectile(self)
+            self.destroy()
+
+    def destroy(self):
+        self.ge.remove_projectile(self.shape)
+        self.ge.remove_sprite(self)
 
     def get_attack_power(self):
         return self.attack_power
 
     def update(self):
         pass
+
+    def fire(self):
+        start_pos = calculate_pos_between_points(self.get_centered_pos(), self.target_pos, self.radius + 5)
+        force = projectile_velocity(start_pos, self.target_pos, self.move_force)
+        self.body.apply_force_at_local_point(force, (0, 0))
+
+
